@@ -1,0 +1,18 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: sbom-triggerbinding
+spec:
+  params:
+    - name: component_name
+      value: $(body.repository.name)
+    - name: app_name
+      value: $(body.repository.owner.name)
+    - name: repository_name
+      value: $(body.repository.name)
+    - name: repository_url
+      value: $(body.repository.url)
+    - name: repository_commit_sha
+      value: $(body.after)
+    - name: repository_branch
+      value: $(body.ref)

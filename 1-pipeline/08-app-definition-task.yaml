@@ -1,0 +1,102 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: app-definition
+spec:
+  params:
+    - name: app_name
+    - name: app_version
+    - name: component_name
+    - name: image_name
+    - name: image
+    - name: image_tag
+    - name: repository_name
+    - name: repository_url
+    - name: access_point_name
+    - name: app_criticality
+    - name: app_endpoint
+    - name: app_endpoint_exposure
+    - name: business_name
+    - name: business_unit
+    - name: business_email
+    - name: business_phone
+    - name: env_target
+  results:
+    - name: output
+  workspaces: 
+    - name: output
+      mountPath: /toolkit-data/
+  steps:
+    - name: app-definition
+      image: icr.io/cpopen/ibm-concert-toolkit:v1.0.4
+      env:
+        - name: APP_NAME
+          value: $(params.app_name)
+        - name: APP_VERSION
+          value: $(params.app_version)
+        - name: APP_CRITICALITY
+          value: $(params.app_criticality)
+        - name: COMPONENT_NAME
+          value: $(params.component_name)
+        - name: BUSINESS_NAME
+          value: $(params.business_name)
+        - name: BUSINESS_UNIT
+          value: $(params.business_unit)
+        - name: BUSINESS_EMAIL
+          value: $(params.business_email)
+        - name: BUSINESS_PHONE
+          value: $(params.business_phone)
+        - name: IMAGE
+          value: $(params.image)
+        - name: GIT_REPOSITORY_NAME
+          value: $(params.repository_name)
+        - name: GIT_REPOSITORY_URL
+          value: $(params.repository_url)
+        - name: ENV_TARGET
+          value: $(params.env_target)
+        - name: ACCESS_POINT_NAME
+          value: $(params.access_point_name)
+        - name: APP_ENDPOINT
+          value: $(params.app_endpoint)
+        - name: APP_ENDPOINT_EXPOSURE
+          value: $(params.app_endpoint_exposure)
+      script: |
+        #!/bin/sh
+        set -x
+        cat << EOF | envsubst > /toolkit-data/app-config.yaml
+        spec_version: "1.0.2"
+        concert:
+          application:
+            output_file: "${APP_NAME}-${COMPONENT_NAME}-app-definition-sbom.json"
+            app_name: "${APP_NAME}"
+            version: "${APP_VERSION}"
+            business:
+              name: "${BUSINESS_NAME}"
+              units:
+              - name: "${BUSINESS_UNIT}"
+                email: "${BUSINESS_EMAIL}"
+                phone: "${BUSINESS_PHONE}"
+            properties:
+              application_criticality: "${APP_CRITICALITY}"
+            components:
+            - component_name: "${COMPONENT_NAME}"
+              version: "${APP_VERSION}"
+              repositories:
+                name: "${GIT_REPOSITORY_NAME}"
+                url: "${GIT_REPOSITORY_URL}"
+              image:
+                name: "${IMAGE}"
+            environment_targets:
+            - name: "${ENV_TARGET}"
+            services:
+            - name: "${ACCESS_POINT_NAME}"
+              type: "app_end_point"
+              endpoints: 
+              - "${APP_ENDPOINT}"
+              properties:
+                network_exposure: "${APP_ENDPOINT_EXPOSURE}"
+              reliant_by:
+              - "${COMPONENT_NAME}"
+        EOF
+        app-sbom --app-config /toolkit-data/app-config.yaml
+        echo -n /toolkit-data/${APP_NAME}-${COMPONENT_NAME}-app-definition-sbom.json | tee $(results.output.path)

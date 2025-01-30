@@ -1,0 +1,75 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: upload-concert
+spec:
+  params:
+    - name: base_url
+    - name: component_name
+    - name: app_definition_file
+    - name: code_scan_file
+    - name: build_sbom_file
+    - name: cve_csv_file
+    - name: cyclonedx_sbom_file
+    - name: deploy_sbom_file
+    # - name: certificate_sbom
+  workspaces: 
+    - name: output
+      mountPath: /toolkit-data
+  steps:
+    - name: upload-concert
+      image: icr.io/cpopen/ibm-concert-toolkit:v1.0.4
+      env:
+        - name: BASE_URL
+          value: $(params.base_url)
+        - name: TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: concert-token-secret
+              key: token
+        - name: APPDEF_SBOM
+          value: $(params.app_definition_file)
+        - name: BUILD_SBOM
+          value: $(params.build_sbom_file)
+        - name: DEPLOY_SBOM
+          value: $(params.deploy_sbom_file)
+        - name: CYCLONEDX_SBOM
+          value: $(params.cyclonedx_sbom_file)
+        - name: CODESCAN_FILE
+          value: $(params.code_scan_file)
+        - name: CVE_CSV
+          value: $(params.cve_csv_file)
+        # - name: CERTIFICATE_SBOM
+        #   value: $(params.certificate_sbom)
+      script: |
+        #!/bin/sh
+        set -x
+        cat << EOF | envsubst > /toolkit-data/upload-config.yaml
+        general:
+          retries: 3
+          timeout: 30
+          verbose: true
+          insecure: true
+        app:
+          base_url: "${BASE_URL}"
+          instance_id: "0000-0000-0000-0000"
+          auth:
+            token:
+              token: ${TOKEN}
+        input-data:
+          application-def:
+            - file: "${APPDEF_SBOM}"
+          build:
+            - file: "${BUILD_SBOM}"
+          deploy:
+            - file: "${DEPLOY_SBOM}"
+          cyclonedx:
+            - file: "${CYCLONEDX_SBOM}"
+            - file: "${CODESCAN_FILE}"
+          image-scan:
+            - file: "${CVE_CSV}"
+              metadata:
+                scanner_name: trivy
+        EOF
+        upload-concert --upload-config /toolkit-data/upload-config.yaml

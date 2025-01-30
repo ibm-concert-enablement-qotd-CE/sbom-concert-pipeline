@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: pre-concert
+spec:
+  params:
+    - name: component_name
+  results:
+    - name: output
+  workspaces: 
+    - name: output
+      mountPath: /toolkit-data/
+  steps:
+    - name: pre-concert
+      image: maven
+      script: |
+        #!/bin/sh
+        set -x
+        test -e /toolkit-data/$(params.component_name)/pom.xml && {
+          echo "pom.xml found - triggering maven build"
+          cd /toolkit-data/$(params.component_name)
+          mvn clean package
+        } || exit 0

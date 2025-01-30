@@ -1,0 +1,21 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: image-scan
+spec:
+  params:
+    - name: image
+    - name: image_tag
+  results:
+    - name: output
+  workspaces: 
+    - name: output
+      mountPath: /toolkit-data
+  steps:
+    - name: image-scan
+      image: icr.io/cpopen/ibm-concert-toolkit:v1.0.4
+      script: |
+        #!/bin/sh
+        set -x
+        image-scan --images $(params.image):$(params.image_tag) | tee -a /tmp/output
+        cat /tmp/output |tail -1|awk '{printf $NF}' | tee $(results.output.path)

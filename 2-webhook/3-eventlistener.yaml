@@ -1,0 +1,14 @@
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: webhook
+spec:
+  serviceAccountName: pipeline
+  triggers:
+    - name: sbom-trigger
+      bindings:
+        - kind: TriggerBinding
+          ref: sbom-triggerbinding
+      template:
+        ref: sbom-template

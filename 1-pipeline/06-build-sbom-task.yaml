@@ -1,0 +1,98 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: build-sbom
+spec:
+  params:
+    - name: image
+    - name: image_tag
+    - name: component_name
+    - name: app_name
+    - name: build_number
+    - name: app_version
+    - name: repository_name
+    - name: repository_url
+    - name: repository_branch
+    - name: repository_commit_sha
+    - name: concert_urn_prefix
+    - name: image_digest
+    - name: codescan_file
+    - name: imagescan_file
+  results:
+    - name: output
+  workspaces: 
+    - name: output
+      mountPath: /toolkit-data
+  steps:
+    - name: build-sbom
+      image: icr.io/cpopen/ibm-concert-toolkit:v1.0.4
+      env:
+        - name: COMPONENT_NAME
+          value: $(params.component_name)
+        - name: APP_NAME
+          value: $(params.app_name)
+        - name: BUILD_NUMBER
+          value: $(params.build_number)
+        - name: APP_VERSION
+          value: $(params.app_version)
+        - name: GIT_REPOSITORY_NAME
+          value: $(params.repository_name)
+        - name: GIT_REPOSITORY_URL
+          value: $(params.repository_url)
+        - name: GIT_REPOSITORY_BRANCH
+          value: $(params.repository_branch)
+        - name: GIT_REPOSITORY_COMMIT_SHA
+          value: $(params.repository_commit_sha)
+        - name: IMAGE
+          value: $(params.image)
+        - name: IMAGE_TAG
+          value: $(params.image_tag)
+        - name: IMAGE_DIGEST
+          value: $(params.image_digest)
+        - name: CODESCAN_FILE
+          value: $(params.codescan_file)
+        - name: IMAGESCAN_FILE
+          value: $(params.imagescan_file)
+      script: |
+        #!/bin/sh
+        set -x
+        export TIMESTAMP_UTC=$(date +"%Y-%m-%dT%H:%M:%SZ")
+
+        CODESCAN_URN=$(jq .serialNumber ${CODESCAN_FILE})
+        IMAGESCAN_URN=$(jq .serialNumber ${IMAGESCAN_FILE})
+
+        #############################################
+        # THIS WILL BE REPLACED BY concert-utils (7/26)
+        #############################################
+
+        cat << EOF | envsubst > /toolkit-data/build-config.yaml
+        spec_version: "1.0.2"
+        concert:
+          builds:
+          - component_name: "${COMPONENT_NAME}"
+            output_file: "${APP_NAME}-${COMPONENT_NAME}-build-sbom.json"
+            app_name: "${APP_NAME}"
+            number: 1
+            version: "${APP_VERSION}"
+            repository:
+              name: "${GIT_REPOSITORY_NAME}"
+              url: "${GIT_REPOSITORY_URL}"
+              branch: "${GIT_REPOSITORY_BRANCH}"
+              commit_sha: "${GIT_REPOSITORY_COMMIT_SHA}"
+              cyclonedx_bom_link:
+                file: "${CODESCAN_FILE}"
+                data:
+                  serial_number: ${CODESCAN_URN}
+                  version: "1"
+            image:
+              name: "${IMAGE}"
+              tag: "${IMAGE_TAG}"
+              digest: "${IMAGE_DIGEST}"
+              cyclonedx_bom_link:
+                file: "${IMAGESCAN_FILE}"
+                data:
+                  serial_number: ${IMAGESCAN_URN}
+                  version: "1"
+        EOF
+        build-sbom --build-config /toolkit-data/build-config.yaml
+        echo -n /toolkit-data/${APP_NAME}-${COMPONENT_NAME}-build-sbom.json | tee $(results.output.path)

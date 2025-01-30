@@ -1,0 +1,27 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: code-scan
+spec:
+  params:
+    - name: component_name
+  results:
+    - name: output
+  workspaces: 
+    - name: output
+      mountPath: /toolkit-data/
+  steps:
+    - name: code-scan
+      # image: icr.io/cpopen/ibm-concert-toolkit:v1.0.3.1
+      image: ghcr.io/cyclonedx/cdxgen:v10.11.0
+      env:
+      - name: CDXGEN_ARGS
+        value: "--spec-version 1.5"
+      script: |
+        #!/bin/sh
+        set -x
+        # code-scan --src /toolkit-data/$(params.component_name) | tee -a /tmp/output
+        # cat /tmp/output |tail -1|awk '{printf $NF}' | tee $(results.output.path)
+        node /opt/cdxgen/bin/cdxgen ${CDXGEN_ARGS} -r /toolkit-data/$(params.component_name) -o /toolkit-data/codescan-cyclonedx.json
+        echo -n /toolkit-data/codescan-cyclonedx.json | tee $(results.output.path)
+        

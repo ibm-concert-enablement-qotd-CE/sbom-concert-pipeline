@@ -1,0 +1,128 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: deploy-sbom
+spec:
+  params:
+    - name: component_name
+    - name: app_name
+    - name: app_version
+    - name: app_url
+    - name: build_number
+    - name: env_target
+    - name: repository_name
+    - name: repository_url
+    - name: repository_branch
+    - name: repository_commit_sha
+    - name: access_point_name
+    - name: k8s_name
+    - name: k8s_cluster_name
+    - name: k8s_platform
+    - name: k8s_env_platform
+    - name: k8s_region
+    - name: k8s_cluster_id
+    - name: k8s_namespace
+    - name: k8s_apiserver
+    - name: image_name
+    - name: image_tag
+    - name: image_digest
+    - name: image
+  results:
+    - name: output  
+  workspaces: 
+    - name: output
+      mountPath: /toolkit-data
+  steps:
+    - name: deploy-sbom
+      image: icr.io/cpopen/ibm-concert-toolkit:v1.0.4
+      env:
+        - name: COMPONENT_NAME
+          value: $(params.component_name)
+        - name: APP_NAME
+          value: $(params.app_name)
+        - name: APP_VERSION
+          value: $(params.app_version)
+        - name: APP_URL
+          value: $(params.app_url)
+        - name: BUILD_NUMBER
+          value: $(params.build_number)
+        - name: ENV_TARGET
+          value: $(params.env_target)
+        - name: GIT_REPOSITORY_NAME
+          value: $(params.repository_name)
+        - name: GIT_REPOSITORY_URL
+          value: $(params.repository_url)
+        - name: GIT_REPOSITORY_BRANCH
+          value: $(params.repository_branch)
+        - name: GIT_REPOSITORY_COMMIT_SHA
+          value: $(params.repository_commit_sha)
+        - name: ACCESS_POINT_NAME
+          value: $(params.access_point_name)
+        - name: K8S_NAME
+          value: $(params.k8s_name)
+        - name: K8S_PLATFORM
+          value: $(params.k8s_platform)
+        - name: K8S_ENV_PLATFORM
+          value: $(params.k8s_env_platform)
+        - name: K8S_CLUSTER_ID
+          value: $(params.k8s_cluster_id)
+        - name: K8S_CLUSTER_REGION
+          value: $(params.k8s_region)
+        - name: K8S_CLUSTER_NAME
+          value: $(params.k8s_cluster_name)
+        - name: K8S_NAMESPACE
+          value: $(params.k8s_namespace)
+        - name: K8S_APISERVER
+          value: $(params.k8s_apiserver)
+        - name: IMAGE_NAME
+          value: $(params.image_name)
+        - name: IMAGE_TAG
+          value: $(params.image_tag)
+        - name: IMAGE_DIGEST
+          value: $(params.image_digest)
+        - name: IMAGE
+          value: $(params.image)
+      script: |
+        #!/bin/sh
+        set -x
+        cat << EOF | envsubst > /toolkit-data/deploy-config.yaml
+        spec_version: "1.0.2"
+        concert:
+          deployments:
+          - output_file: "${APP_NAME}-${COMPONENT_NAME}-deploy-sbom.json"
+            metadata:
+              component_name: "${COMPONENT_NAME}"
+              number: "1"
+              version: "${APP_VERSION}"
+            environment_target: "${ENV_TARGET}"
+            repositories:
+            - name: "${GIT_REPOSITORY_NAME}"
+              url: "${GIT_REPOSITORY_URL}"
+              branch: "${GIT_REPOSITORY_BRANCH}"
+              commit_sha: "${GIT_REPOSITORY_COMMIT_SHA}"
+            services:
+            - name: "${ACCESS_POINT_NAME}"
+              type: "app_access_point"
+              properties:
+                base_url: "${APP_URL}"
+            runtime:
+            - name: "${K8S_NAME}"
+              type: "kubernetes"
+              depends_on: 
+              - "${COMPONENT_NAME}"
+              properties:
+                platform: "${K8S_PLATFORM}"
+                cluster_platform: "${K8S_ENV_PLATFORM}"
+                cluster_id: "${K8S_CLUSTER_ID}"
+                cluster_region: "${K8S_CLUSTER_REGION}"
+                cluster_name: "${K8S_CLUSTER_NAME}"
+              api-server: ${K8S_APISERVER}
+              namespaces:
+              - name: "${K8S_NAMESPACE}"
+                images:
+                - name: "${IMAGE}"
+                  tag: "${IMAGE_TAG}"
+                  digest: "${IMAGE_DIGEST}"
+        EOF
+        deploy-sbom --deploy-config /toolkit-data/deploy-config.yaml 
+        echo -n /toolkit-data/${APP_NAME}-${COMPONENT_NAME}-deploy-sbom.json | tee $(results.output.path)
