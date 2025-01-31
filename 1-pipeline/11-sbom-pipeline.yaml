@@ -63,7 +63,14 @@ spec:
   tasks:
     - name: git-clone
       taskRef:
-        name: git-clone
+        resolver: cluster
+        params:
+        - name: kind
+          value: task
+        - name: name
+          value: git-clone
+        - name: namespace
+          value: openshift-pipelines
       params:
       - name: URL
         value: $(params.repository_url)
