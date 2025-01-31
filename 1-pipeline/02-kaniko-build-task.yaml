@@ -22,7 +22,7 @@ spec:
       description: The version of the application being built.
     - name: DOCKERFILE
       description: Path to the Dockerfile to build.
-      default: ./Dockerfile
+      default: ./qotd-web/Dockerfile
     - name: CONTEXT
       description: The build context used by Kaniko.
       default: ./
