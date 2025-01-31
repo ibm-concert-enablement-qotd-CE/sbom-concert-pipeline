@@ -56,21 +56,20 @@ spec:
     - name: "business_unit"
       default: IBM CS
     - name: "business_email"
-      default: "ncolon@us.ibm.com"
+      default: "get-a-quote@qotdweb.com"
     - name: business_phone
-      default: "787-688-8466"
+      default: "900-688-8969"
 
   tasks:
     - name: git-clone
       taskRef:
         name: git-clone
-        kind: ClusterTask
       params:
-      - name: url
+      - name: URL
         value: $(params.repository_url)
-      - name: revision
+      - name: REVISION
         value: $(params.repository_branch)
-      - name: subdirectory
+      - name: SUBDIRECTORY
         value: $(params.component_name)
       workspaces:
         - name: output
@@ -296,27 +295,6 @@ spec:
         value: $(params.business_phone)
       - name: env_target
         value: $(params.env_target)
-    # - name: cert-sbom
-    #   runAfter:
-    #     - app-definition
-    #   taskRef:
-    #     name: cert-sbom
-    #   workspaces:
-    #     - name: output
-    #       workspace: output
-    #   params:
-    #   - name: component_name
-    #     value: $(params.component_name)
-    #   - name: app_endpoint_exposure
-    #     value: $(params.app_endpoint_exposure)
-    #   - name: business_email
-    #     value: $(params.business_email)
-    #   - name: env_target
-    #     value: $(params.env_target)
-    #   - name: app_url
-    #     value: $(params.app_url)
-    #   - name: app_port
-    #     value: $(params.app_port)
     - name: upload-concert
       runAfter:
         - app-definition
@@ -346,5 +324,3 @@ spec:
         value: $(tasks.code-scan.results.output)
       - name: cve_csv_file
         value: $(tasks.cve-scan.results.output)
-      # - name: certificate_sbom
-      #   value: $(tasks.cert-sbom.results.output)
