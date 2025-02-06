@@ -117,9 +117,9 @@ spec:
       - name: IMAGE
         value: $(params.image)
       - name: DOCKERFILE
-        value: "$(params.component_name)/qotd-web/Dockerfile"
+        value: "$(params.component_name)/Dockerfile"
       - name: CONTEXT
-        value: "$(params.component_name)/qotd-web"
+        value: "$(params.component_name)/"
       - name: APP_VERSION
         value: $(params.app_version)
     - name: skopeo-copy
