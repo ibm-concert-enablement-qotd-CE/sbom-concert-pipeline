@@ -19,10 +19,10 @@ spec:
       mountPath: /toolkit-data
   steps:
     - name: upload-concert
-      image: icr.io/cpopen/ibm-concert-toolkit:v1.0.4
+      image: icr.io/cpopen/ibm-concert-toolkit:v2.0.0.1
       env:
         - name: BASE_URL
-          value: $(params.base_url)
+          value: "https://52.118.191.234:12443"
         - name: TOKEN
           valueFrom:
             secretKeyRef:
@@ -56,7 +56,7 @@ spec:
           instance_id: "0000-0000-0000-0000"
           auth:
             token:
-              token: ${TOKEN}
+              token: "${TOKEN}"
         input-data:
           application-def:
             - file: "${APPDEF_SBOM}"

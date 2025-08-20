@@ -29,7 +29,7 @@ spec:
     - name: env_target
       default: "production"
     - name: base_url
-      default: "https://150.240.160.246:12443"
+      default: "https://52.118.191.234:12443"
     - name: image_name
     - name: k8s_name
       default: "k8s-concert"
@@ -73,7 +73,7 @@ spec:
           value: openshift-pipelines
       params:
       - name: URL
-        value: $(params.repository_url)
+        value: https://github.com/ibm-concert-enablement-qotd-CE/qotd-web.git
       - name: REVISION
         value: $(params.repository_branch)
       - name: SUBDIRECTORY

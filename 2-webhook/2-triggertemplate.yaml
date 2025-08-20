@@ -42,7 +42,7 @@ spec:
       - name: repository_commit_sha
         value: "$(tt.params.repository_commit_sha)"
       - name: image
-        value: " "
+        value: "quay.io/alexcastano2/concert"
       - name: image_name
         value: $(tt.params.component_name)
       - name: image_tag
